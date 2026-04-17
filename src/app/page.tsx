@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
-import { Send, Sparkles, Copy, Check, RefreshCw, Loader2, ArrowRight, CheckCircle2, Zap, Lightbulb, MessageSquare, BookOpen } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { Send, Copy, Check, RefreshCw, Loader2, ArrowRight, CheckCircle2, Zap, Lightbulb, MessageSquare, BookOpen, Globe, Languages } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Section {
   title: string;
@@ -13,7 +14,7 @@ interface Section {
   color: string;
 }
 
-const SECTIONS: Section[] = [
+const SECTIONS_CN: Section[] = [
   { title: "人话翻译", content: "", icon: "📝", color: "bg-blue-50 border-blue-200" },
   { title: "真实意图", content: "", icon: "🎯", color: "bg-green-50 border-green-200" },
   { title: "需要追问", content: "", icon: "❓", color: "bg-amber-50 border-amber-200" },
@@ -21,11 +22,26 @@ const SECTIONS: Section[] = [
   { title: "知识点", content: "", icon: "📚", color: "bg-teal-50 border-teal-200" },
 ];
 
-const EXAMPLE_PHRASES = [
+const SECTIONS_EN: Section[] = [
+  { title: "中文翻译", content: "", icon: "📝", color: "bg-blue-50 border-blue-200" },
+  { title: "真实意图", content: "", icon: "🎯", color: "bg-green-50 border-green-200" },
+  { title: "需要追问", content: "", icon: "❓", color: "bg-amber-50 border-amber-200" },
+  { title: "回复模板", content: "", icon: "💬", color: "bg-sky-50 border-sky-200" },
+  { title: "知识点", content: "", icon: "📚", color: "bg-teal-50 border-teal-200" },
+];
+
+const EXAMPLE_PHRASES_CN = [
   "我们先把底层逻辑拉通，然后形成一套可复用的方法论",
   "这个需求需要赋能业务，要用闭环思维来思考",
   "我们要在新赛道上发力，形成完整的生态闭环",
   "先把颗粒度对齐，然后用组合拳来打法落地",
+];
+
+const EXAMPLE_PHRASES_EN = [
+  "Let's circle back on this after we align on the deliverables",
+  "We need to leverage our synergies to drive this initiative forward",
+  "Let's take this offline and sync up later",
+  "We should do a deep dive into this next quarter",
 ];
 
 const FEATURES = [
@@ -51,37 +67,67 @@ const FEATURES = [
   },
 ];
 
-export default function Home() {
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [sections, setSections] = useState<Section[]>(SECTIONS.map(s => ({ ...s })));
-  const [currentSection, setCurrentSection] = useState(0);
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
-  const [showExamples, setShowExamples] = useState(true);
-  const [hasResult, setHasResult] = useState(false);
-  const resultRef = useRef<HTMLDivElement>(null);
-  const fullResponse = useRef<string>("");
-
+function TranslationSection({
+  input,
+  setInput,
+  isLoading,
+  setIsLoading,
+  sections,
+  setSections,
+  currentSection,
+  setCurrentSection,
+  copiedIndex,
+  setCopiedIndex,
+  showExamples,
+  setShowExamples,
+  hasResult,
+  setHasResult,
+  resultRef,
+  fullResponse,
+  apiEndpoint,
+  examplePhrases,
+  placeholder,
+  tabLabel,
+}: {
+  input: string;
+  setInput: (v: string) => void;
+  isLoading: boolean;
+  setIsLoading: (v: boolean) => void;
+  sections: Section[];
+  setSections: React.Dispatch<React.SetStateAction<Section[]>>;
+  currentSection: number;
+  setCurrentSection: (v: number) => void;
+  copiedIndex: number | null;
+  setCopiedIndex: (v: number | null) => void;
+  showExamples: boolean;
+  setShowExamples: (v: boolean) => void;
+  hasResult: boolean;
+  setHasResult: (v: boolean) => void;
+  resultRef: React.RefObject<HTMLDivElement | null>;
+  fullResponse: React.MutableRefObject<string>;
+  apiEndpoint: string;
+  examplePhrases: string[];
+  placeholder: string;
+  tabLabel: string;
+}) {
   const parseSections = useCallback((text: string) => {
-    const newSections = SECTIONS.map(s => ({ ...s }));
+    const newSections = sections.map(s => ({ ...s }));
     
-    const humanMatch = text.match(/人话翻译[：:]\s*([\s\S]*?)(?=真实意图|$)/i);
-    if (humanMatch) newSections[0].content = humanMatch[1].trim();
+    const patterns = [
+      { key: 0, regex: /(?:人话翻译|中文翻译)[：:]\s*([\s\S]*?)(?=真实意图|$)/i },
+      { key: 1, regex: /真实意图[：:]\s*([\s\S]*?)(?=需要追问|$)/i },
+      { key: 2, regex: /需要追问[：:]\s*([\s\S]*?)(?=回复模板|$)/i },
+      { key: 3, regex: /回复模板[：:]\s*([\s\S]*?)(?=知识点|$)/i },
+      { key: 4, regex: /知识点[：:]\s*([\s\S]*?)$/i },
+    ];
     
-    const intentMatch = text.match(/真实意图[：:]\s*([\s\S]*?)(?=需要追问|$)/i);
-    if (intentMatch) newSections[1].content = intentMatch[1].trim();
-    
-    const questionMatch = text.match(/需要追问[：:]\s*([\s\S]*?)(?=回复模板|$)/i);
-    if (questionMatch) newSections[2].content = questionMatch[1].trim();
-    
-    const templateMatch = text.match(/回复模板[：:]\s*([\s\S]*?)(?=知识点|$)/i);
-    if (templateMatch) newSections[3].content = templateMatch[1].trim();
-    
-    const knowledgeMatch = text.match(/知识点[：:]\s*([\s\S]*?)$/i);
-    if (knowledgeMatch) newSections[4].content = knowledgeMatch[1].trim();
+    patterns.forEach(({ key, regex }) => {
+      const match = text.match(regex);
+      if (match) newSections[key].content = match[1].trim();
+    });
     
     return newSections;
-  }, []);
+  }, [sections]);
 
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || isLoading) return;
@@ -89,12 +135,12 @@ export default function Home() {
     setIsLoading(true);
     setShowExamples(false);
     setHasResult(false);
-    setSections(SECTIONS.map(s => ({ ...s })));
+    setSections(sections.map(s => ({ ...s })));
     setCurrentSection(0);
     fullResponse.current = "";
 
     try {
-      const response = await fetch("/api/translate", {
+      const response = await fetch(apiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: input }),
@@ -117,7 +163,7 @@ export default function Home() {
         
         const currentContent = buffer.substring(buffer.lastIndexOf("：") + 1);
         
-        setSections(prev => {
+        setSections((prev: Section[]) => {
           const updated = [...prev];
           if (currentSection < updated.length) {
             updated[currentSection] = { ...updated[currentSection], content: currentContent.trim() };
@@ -125,10 +171,12 @@ export default function Home() {
           return updated;
         });
 
-        if (buffer.includes("真实意图") && currentSection < 1) setCurrentSection(1);
-        if (buffer.includes("需要追问") && currentSection < 2) setCurrentSection(2);
-        if (buffer.includes("回复模板") && currentSection < 3) setCurrentSection(3);
-        if (buffer.includes("知识点") && currentSection < 4) setCurrentSection(4);
+        const sectionMarkers = ["真实意图", "需要追问", "回复模板", "知识点"];
+        sectionMarkers.forEach((marker, idx) => {
+          if (buffer.includes(marker) && currentSection < idx + 1) {
+            setCurrentSection(idx + 1);
+          }
+        });
       }
 
       const finalSections = parseSections(fullResponse.current);
@@ -137,11 +185,11 @@ export default function Home() {
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     } catch (error) {
       console.error("翻译失败:", error);
-      setSections(prev => prev.map(s => ({ ...s, content: s.title === "人话翻译" ? "翻译失败，请重试" : s.content })));
+      setSections((prev: Section[]) => prev.map((s: Section) => ({ ...s, content: s.title.includes("翻译") ? "翻译失败，请重试" : s.content })));
     } finally {
       setIsLoading(false);
     }
-  }, [input, isLoading, currentSection, parseSections]);
+  }, [input, isLoading, currentSection, apiEndpoint, parseSections, sections, fullResponse, resultRef, setCurrentSection, setHasResult, setSections, setShowExamples]);
 
   const copyToClipboard = useCallback(async (text: string, index: number) => {
     try {
@@ -156,16 +204,16 @@ export default function Home() {
   const handleExampleClick = useCallback((example: string) => {
     setInput(example);
     setShowExamples(false);
-  }, []);
+  }, [setInput, setShowExamples]);
 
-  const resetAndShowExamples = useCallback(() => {
+  const reset = useCallback(() => {
     setInput("");
     setShowExamples(true);
     setHasResult(false);
-    setSections(SECTIONS.map(s => ({ ...s })));
+    setSections(sections.map(s => ({ ...s })));
     setCurrentSection(0);
     fullResponse.current = "";
-  }, []);
+  }, [sections, setCurrentSection, setHasResult, setInput, setSections, setShowExamples, fullResponse]);
 
   const renderTemplateContent = (content: string) => {
     const politeMatch = content.match(/礼貌版[：:]\s*([\s\S]*?)(?=强硬版|$)/i);
@@ -234,6 +282,151 @@ export default function Home() {
   };
 
   return (
+    <div className="space-y-6">
+      <Card className="border-2 border-[#0078D4]/20 shadow-xl shadow-blue-100/50">
+        <CardContent className="p-8">
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={placeholder}
+            className="min-h-[120px] text-base border-0 resize-none focus-visible:ring-0 p-0 bg-transparent text-gray-800 placeholder:text-gray-400"
+            disabled={isLoading}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                handleSubmit();
+              }
+            }}
+          />
+          <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
+            <p className="text-sm text-gray-500">
+              按 <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono text-gray-600">Ctrl + Enter</kbd> 快速提交
+            </p>
+            <Button
+              onClick={handleSubmit}
+              disabled={!input.trim() || isLoading}
+              className="bg-[#0078D4] hover:bg-[#106EBE] text-white px-6"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  翻译中...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  开始翻译
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {showExamples && (
+        <div>
+          <p className="text-sm text-gray-500 mb-3 text-center">试试这些{tabLabel}：</p>
+          <div className="flex flex-wrap gap-2 justify-center">
+            {examplePhrases.map((phrase, index) => (
+              <button
+                key={index}
+                onClick={() => handleExampleClick(phrase)}
+                className="px-3 py-2 bg-white border border-gray-200 rounded-full text-sm text-gray-600 hover:border-[#0078D4] hover:text-[#0078D4] transition-colors shadow-sm"
+              >
+                {phrase.length > 30 ? phrase.slice(0, 30) + "..." : phrase}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="flex items-center justify-center gap-3 py-8">
+          <div className="w-3 h-3 bg-[#0078D4] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+          <div className="w-3 h-3 bg-[#0078D4] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+          <div className="w-3 h-3 bg-[#0078D4] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+        </div>
+      )}
+
+      {(hasResult || sections.some(s => s.content)) && (
+        <div ref={resultRef} className="space-y-4">
+          {sections.map((section, index) => {
+            if (!section.content) return null;
+            
+            return (
+              <Card key={index} className={`${section.color} border-2`}>
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-[#323130] flex items-center gap-3">
+                      <span className="text-2xl">{section.icon}</span>
+                      {section.title}
+                    </h2>
+                    <button
+                      onClick={() => copyToClipboard(
+                        index === 3 ? section.content : index === 4 ? section.content : `${section.title}：${section.content}`,
+                        index
+                      )}
+                      className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                      title="复制内容"
+                    >
+                      {copiedIndex === index ? (
+                        <Check className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-gray-400" />
+                      )}
+                    </button>
+                  </div>
+                  <div className="text-gray-700 leading-relaxed">
+                    {index === 3 ? renderTemplateContent(section.content) :
+                     index === 4 ? renderKnowledgeContent(section.content) :
+                     <p className="whitespace-pre-wrap">{section.content}</p>}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+          
+          {hasResult && (
+            <div className="flex justify-center pt-4">
+              <Button
+                variant="outline"
+                onClick={reset}
+                className="gap-2 border-[#0078D4] text-[#0078D4] hover:bg-[#0078D4]/10"
+              >
+                <RefreshCw className="w-4 h-4" />
+                继续翻译
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Home() {
+  // Chinese translation state
+  const [inputCn, setInputCn] = useState("");
+  const [isLoadingCn, setIsLoadingCn] = useState(false);
+  const [sectionsCn, setSectionsCn] = useState<Section[]>(SECTIONS_CN.map(s => ({ ...s })));
+  const [currentSectionCn, setCurrentSectionCn] = useState(0);
+  const [copiedIndexCn, setCopiedIndexCn] = useState<number | null>(null);
+  const [showExamplesCn, setShowExamplesCn] = useState(true);
+  const [hasResultCn, setHasResultCn] = useState(false);
+  const resultRefCn = useRef<HTMLDivElement>(null);
+  const fullResponseCn = useRef<string>("");
+
+  // English translation state
+  const [inputEn, setInputEn] = useState("");
+  const [isLoadingEn, setIsLoadingEn] = useState(false);
+  const [sectionsEn, setSectionsEn] = useState<Section[]>(SECTIONS_EN.map(s => ({ ...s })));
+  const [currentSectionEn, setCurrentSectionEn] = useState(0);
+  const [copiedIndexEn, setCopiedIndexEn] = useState<number | null>(null);
+  const [showExamplesEn, setShowExamplesEn] = useState(true);
+  const [hasResultEn, setHasResultEn] = useState(false);
+  const resultRefEn = useRef<HTMLDivElement>(null);
+  const fullResponseEn = useRef<string>("");
+
+  return (
     <div className="min-h-screen bg-[#F5F5F5]">
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
@@ -265,13 +458,13 @@ export default function Home() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-white">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 rounded-full text-sm mb-6 backdrop-blur-sm">
-                <Sparkles className="w-4 h-4" />
+                <Zap className="w-4 h-4" />
                 职场生存必备工具
               </div>
               <h1 className="text-4xl lg:text-5xl font-bold mb-6 leading-tight">
                 把黑话翻译成
                 <br />
-                <span className="text-[#FFB900]">人话</span>
+                <span className="text-[#FFB900]">大白话</span>
               </h1>
               <p className="text-lg text-white/90 mb-8 max-w-lg">
                 输入听不懂的职场黑话，我们把它翻译成具体、可执行的大白话。让你立刻知道该做什么、该问什么、该怎么回复。
@@ -320,7 +513,7 @@ export default function Home() {
                     <p className="text-xs text-gray-500 mb-2">翻译结果：</p>
                     <div className="bg-blue-50 rounded-lg p-4 text-sm text-gray-800 space-y-2">
                       <p><strong>人话：</strong>大家先凑一起把这件事的基本规则说清楚，确保理解一致，然后再整理一套以后都能用的操作步骤。</p>
-                      <p><strong>意图：</strong>统一意见+省得我以后重复解释。</p>
+                      <p><strong>意图：</strong>统一意见，省得我以后重复解释。</p>
                     </div>
                   </div>
                 </div>
@@ -374,7 +567,7 @@ export default function Home() {
               <ul className="space-y-3">
                 <li className="flex items-center gap-3 text-gray-700">
                   <CheckCircle2 className="w-5 h-5 text-[#107C10]" />
-                  <span>50-300字详细翻译</span>
+                  <span>详细翻译解读</span>
                 </li>
                 <li className="flex items-center gap-3 text-gray-700">
                   <CheckCircle2 className="w-5 h-5 text-[#107C10]" />
@@ -410,137 +603,79 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-10">
             <h2 className="text-3xl font-bold text-[#323130] mb-4">立即体验</h2>
-            <p className="text-gray-600">粘贴你想翻译的黑话，开始探索真相</p>
+            <p className="text-gray-600">选择翻译模式，粘贴你想翻译的内容</p>
           </div>
 
-          <Card className="border-2 border-[#0078D4]/20 shadow-xl shadow-blue-100/50">
-            <CardContent className="p-8">
-              <Textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="粘贴你想翻译的黑话...
-
-例如：
-我们先把底层逻辑拉通，然后形成一套可复用的方法论
-这个需求需要赋能业务，要用闭环思维来思考"
-                className="min-h-[140px] text-base border-0 resize-none focus-visible:ring-0 p-0 bg-transparent text-gray-800 placeholder:text-gray-400"
-                disabled={isLoading}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                    handleSubmit();
-                  }
-                }}
-              />
-              <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
-                <p className="text-sm text-gray-500">
-                  按 <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono text-gray-600">Ctrl + Enter</kbd> 快速提交
-                </p>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!input.trim() || isLoading}
-                  className="bg-[#0078D4] hover:bg-[#106EBE] text-white px-8"
+          <Tabs defaultValue="cn" className="w-full">
+            <div className="flex justify-center mb-8">
+              <TabsList className="bg-gray-100 p-1 rounded-lg">
+                <TabsTrigger 
+                  value="cn" 
+                  className="data-[state=active]:bg-[#0078D4] data-[state=active]:text-white px-6 py-2.5 rounded-md transition-all"
                 >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      翻译中...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      开始翻译
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Example Buttons */}
-          {showExamples && (
-            <div className="mt-8">
-              <p className="text-sm text-gray-500 mb-4 text-center">试试这些常见黑话：</p>
-              <div className="flex flex-wrap gap-3 justify-center">
-                {EXAMPLE_PHRASES.map((phrase, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleExampleClick(phrase)}
-                    className="px-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm text-gray-600 hover:border-[#0078D4] hover:text-[#0078D4] transition-colors shadow-sm"
-                  >
-                    {phrase.length > 25 ? phrase.slice(0, 25) + "..." : phrase}
-                  </button>
-                ))}
-              </div>
+                  <Languages className="w-4 h-4 mr-2" />
+                  中文黑话
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="en" 
+                  className="data-[state=active]:bg-[#0078D4] data-[state=active]:text-white px-6 py-2.5 rounded-md transition-all"
+                >
+                  <Globe className="w-4 h-4 mr-2" />
+                  English Slang
+                </TabsTrigger>
+              </TabsList>
             </div>
-          )}
 
-          {/* Loading State */}
-          {isLoading && (
-            <div className="mt-8">
-              <div className="flex items-center justify-center gap-3 py-8">
-                <div className="w-3 h-3 bg-[#0078D4] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                <div className="w-3 h-3 bg-[#0078D4] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                <div className="w-3 h-3 bg-[#0078D4] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-              </div>
-              <p className="text-center text-gray-500 text-sm">
-                正在翻译成大白话...
-              </p>
-            </div>
-          )}
+            <TabsContent value="cn" className="mt-0">
+              <TranslationSection
+                input={inputCn}
+                setInput={setInputCn}
+                isLoading={isLoadingCn}
+                setIsLoading={setIsLoadingCn}
+                sections={sectionsCn}
+                setSections={setSectionsCn}
+                currentSection={currentSectionCn}
+                setCurrentSection={setCurrentSectionCn}
+                copiedIndex={copiedIndexCn}
+                setCopiedIndex={setCopiedIndexCn}
+                showExamples={showExamplesCn}
+                setShowExamples={setShowExamplesCn}
+                hasResult={hasResultCn}
+                setHasResult={setHasResultCn}
+                resultRef={resultRefCn}
+                fullResponse={fullResponseCn}
+                apiEndpoint="/api/translate"
+                examplePhrases={EXAMPLE_PHRASES_CN}
+                placeholder={"粘贴你想翻译的中文黑话...\n\n例如：\n我们先把底层逻辑拉通，然后形成一套可复用的方法论\n这个需求需要赋能业务，要用闭环思维来思考"}
+                tabLabel="常见黑话"
+              />
+            </TabsContent>
 
-          {/* Results */}
-          {(hasResult || sections.some(s => s.content)) && (
-            <div ref={resultRef} className="mt-8 space-y-4">
-              {sections.map((section, index) => {
-                if (!section.content) return null;
-                
-                return (
-                  <Card key={index} className={`${section.color} border-2`}>
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <h2 className="text-lg font-semibold text-[#323130] flex items-center gap-3">
-                          <span className="text-2xl">{section.icon}</span>
-                          {section.title}
-                        </h2>
-                        <button
-                          onClick={() => copyToClipboard(
-                            index === 3 ? section.content : index === 4 ? section.content : `${section.title}：${section.content}`,
-                            index
-                          )}
-                          className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-                          title="复制内容"
-                        >
-                          {copiedIndex === index ? (
-                            <Check className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <Copy className="w-4 h-4 text-gray-400" />
-                          )}
-                        </button>
-                      </div>
-                      <div className="text-gray-700 leading-relaxed">
-                        {index === 3 ? renderTemplateContent(section.content) :
-                         index === 4 ? renderKnowledgeContent(section.content) :
-                         <p className="whitespace-pre-wrap">{section.content}</p>}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-              
-              {hasResult && (
-                <div className="flex justify-center pt-6">
-                  <Button
-                    variant="outline"
-                    onClick={resetAndShowExamples}
-                    className="gap-2 border-[#0078D4] text-[#0078D4] hover:bg-[#0078D4]/10"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    继续翻译
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
+            <TabsContent value="en" className="mt-0">
+              <TranslationSection
+                input={inputEn}
+                setInput={setInputEn}
+                isLoading={isLoadingEn}
+                setIsLoading={setIsLoadingEn}
+                sections={sectionsEn}
+                setSections={setSectionsEn}
+                currentSection={currentSectionEn}
+                setCurrentSection={setCurrentSectionEn}
+                copiedIndex={copiedIndexEn}
+                setCopiedIndex={setCopiedIndexEn}
+                showExamples={showExamplesEn}
+                setShowExamples={setShowExamplesEn}
+                hasResult={hasResultEn}
+                setHasResult={setHasResultEn}
+                resultRef={resultRefEn}
+                fullResponse={fullResponseEn}
+                apiEndpoint="/api/translate-en"
+                examplePhrases={EXAMPLE_PHRASES_EN}
+                placeholder={"Paste English slang or corporate expressions...\n\nFor example:\nLet's circle back on this\nWe need to leverage our synergies\nTake this offline"}
+                tabLabel="常见表达"
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       </section>
 
@@ -560,8 +695,8 @@ export default function Home() {
             <div>
               <h4 className="font-semibold mb-4">功能</h4>
               <ul className="space-y-2 text-gray-400 text-sm">
-                <li>人话翻译</li>
-                <li>真实意图解析</li>
+                <li>中文黑话翻译</li>
+                <li>英文表达翻译</li>
                 <li>回复模板</li>
                 <li>知识卡片</li>
               </ul>
