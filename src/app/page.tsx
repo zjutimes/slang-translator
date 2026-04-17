@@ -498,6 +498,7 @@ export default function Home() {
           <nav className="flex items-center gap-6">
             <a href="#features" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">功能介绍</a>
             <a href="#try" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">立即体验</a>
+            <a href="/dictionary" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">江湖词典</a>
             <Button 
               size="sm"
               className="bg-[#0078D4] hover:bg-[#106EBE] text-white"
@@ -888,8 +889,8 @@ export default function Home() {
               <ul className="space-y-2 text-gray-400 text-sm">
                 <li>中文黑话翻译</li>
                 <li>英文表达翻译</li>
-                <li>回复模板</li>
-                <li>知识卡片</li>
+                <li>普通话转粤语</li>
+                <li><a href="/dictionary" className="hover:text-white transition-colors">江湖词典</a></li>
               </ul>
             </div>
             <div>
