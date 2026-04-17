@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Send, Copy, Check, RefreshCw, Loader2, ArrowRight, CheckCircle2, Zap, Lightbulb, MessageSquare, BookOpen, Globe, Languages } from "lucide-react";
+import { Send, Copy, Check, RefreshCw, Loader2, ArrowRight, CheckCircle2, Zap, Lightbulb, MessageSquare, BookOpen, Globe, Languages, User, LogOut } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import LoginModal from "@/components/login-modal";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Section {
   title: string;
@@ -486,6 +488,10 @@ export default function Home() {
     }
   };
 
+  // 登录状态
+  const { user, isLoggedIn, logout } = useAuth();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
       {/* Header */}
@@ -500,13 +506,31 @@ export default function Home() {
             <a href="#try" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">立即体验</a>
             <a href="/dictionary" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">江湖词典</a>
             <a href="/blog" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">博客</a>
-            <Button 
-              size="sm"
-              className="bg-[#0078D4] hover:bg-[#106EBE] text-white"
-              onClick={() => document.getElementById('try')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              开始使用
-            </Button>
+            {isLoggedIn ? (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-600 flex items-center gap-1">
+                  <User className="w-4 h-4" />
+                  {user?.nickname}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={logout}
+                  className="gap-1 text-gray-600"
+                >
+                  <LogOut className="w-4 h-4" />
+                  退出
+                </Button>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                className="bg-[#0078D4] hover:bg-[#106EBE] text-white"
+                onClick={() => setIsLoginModalOpen(true)}
+              >
+                登录
+              </Button>
+            )}
           </nav>
         </div>
       </header>
@@ -871,6 +895,13 @@ export default function Home() {
           </Tabs>
         </div>
       </section>
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={() => setIsLoginModalOpen(false)}
+      />
 
       {/* Footer */}
       <footer className="bg-[#323130] text-white py-12">

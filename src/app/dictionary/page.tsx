@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, BookOpen, X, Copy, Check, ChevronDown, ChevronUp } from "lucide-react";
+import Link from "next/link";
+import { Search, BookOpen, X, Copy, Check, ChevronDown, ChevronUp, User, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { JARGON_DICTIONARY, CATEGORIES, SEARCH_EXAMPLES, type JargonEntry } from "@/lib/jargon-dict";
+import LoginModal from "@/components/login-modal";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function DictionaryPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -58,6 +61,10 @@ export default function DictionaryPage() {
     return counts;
   }, []);
 
+  // 登录状态
+  const { user, isLoggedIn, logout } = useAuth();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
       {/* Header */}
@@ -68,6 +75,7 @@ export default function DictionaryPage() {
             <span className="text-xl font-semibold text-[#323130]">黑话翻译器</span>
           </div>
           <nav className="flex items-center gap-6">
+            <a href="/blog" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">博客</a>
             <a href="/" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">翻译器</a>
             <a href="/dictionary" className="text-sm text-[#0078D4] font-medium">江湖词典</a>
           </nav>
@@ -229,6 +237,13 @@ export default function DictionaryPage() {
           </div>
         )}
       </main>
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={() => setIsLoginModalOpen(false)}
+      />
 
       {/* Footer */}
       <footer className="bg-[#323130] text-white py-12 mt-12">

@@ -2,12 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Calendar, User, BookOpen, Share2, Clock } from "lucide-react";
+import { ArrowLeft, Calendar, User, BookOpen, Share2, Clock, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import LoginModal from "@/components/login-modal";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function BlogPage() {
   const [readTime] = useState("约 8 分钟");
+  const { user, isLoggedIn, logout } = useAuth();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const shareArticle = async () => {
     if (navigator.share) {
@@ -41,6 +45,31 @@ export default function BlogPage() {
             <Link href="/" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">翻译器</Link>
             <Link href="/dictionary" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">江湖词典</Link>
             <Link href="/blog" className="text-sm text-[#0078D4] font-medium">博客</Link>
+            {isLoggedIn ? (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-600 flex items-center gap-1">
+                  <User className="w-4 h-4" />
+                  {user?.nickname}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={logout}
+                  className="gap-1 text-gray-600"
+                >
+                  <LogOut className="w-4 h-4" />
+                  退出
+                </Button>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                className="bg-[#0078D4] hover:bg-[#106EBE] text-white"
+                onClick={() => setIsLoginModalOpen(true)}
+              >
+                登录
+              </Button>
+            )}
           </nav>
         </div>
       </header>
@@ -288,6 +317,13 @@ export default function BlogPage() {
           </div>
         </section>
       </main>
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={() => setIsLoginModalOpen(false)}
+      />
 
       {/* Footer */}
       <footer className="bg-[#323130] text-white py-8 mt-16">
