@@ -44,6 +44,13 @@ const EXAMPLE_PHRASES_EN = [
   "We should do a deep dive into this next quarter",
 ];
 
+const EXAMPLE_PHRASES_YUE = [
+  "今天天气真好，我们去逛街吧",
+  "我今天很忙，晚上才能吃饭",
+  "这本书很有趣，我已经看完了",
+  "明天我要去广州出差",
+];
+
 const FEATURES = [
   {
     icon: Zap,
@@ -426,6 +433,59 @@ export default function Home() {
   const resultRefEn = useRef<HTMLDivElement>(null);
   const fullResponseEn = useRef<string>("");
 
+  // Cantonese translation state
+  const [inputYue, setInputYue] = useState("");
+  const [isLoadingYue, setIsLoadingYue] = useState(false);
+  const [copiedYue, setCopiedYue] = useState(false);
+  const [showExamplesYue, setShowExamplesYue] = useState(true);
+  const [hasResultYue, setHasResultYue] = useState(false);
+  const [resultYue, setResultYue] = useState("");
+  const resultRefYue = useRef<HTMLDivElement>(null);
+  const fullResponseYue = useRef<string>("");
+
+  // Cantonese submit handler
+  const handleYueSubmit = async () => {
+    if (!inputYue.trim() || isLoadingYue) return;
+
+    setIsLoadingYue(true);
+    setShowExamplesYue(false);
+    setHasResultYue(false);
+    setResultYue("");
+    fullResponseYue.current = "";
+
+    try {
+      const response = await fetch("/api/translate-yue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: inputYue }),
+      });
+
+      if (!response.ok) throw new Error("转换请求失败");
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("无法读取响应");
+
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: false });
+        fullResponseYue.current += chunk;
+        setResultYue(fullResponseYue.current.trim());
+      }
+
+      setHasResultYue(true);
+      setTimeout(() => resultRefYue.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    } catch (error) {
+      console.error("转换失败:", error);
+      setResultYue("转换失败，请重试");
+    } finally {
+      setIsLoadingYue(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
       {/* Header */}
@@ -623,6 +683,13 @@ export default function Home() {
                   <Globe className="w-4 h-4 mr-2" />
                   English Slang
                 </TabsTrigger>
+                <TabsTrigger 
+                  value="yue" 
+                  className="data-[state=active]:bg-[#0078D4] data-[state=active]:text-white px-6 py-2.5 rounded-md transition-all"
+                >
+                  <Languages className="w-4 h-4 mr-2" />
+                  普通话转粤语
+                </TabsTrigger>
               </TabsList>
             </div>
 
@@ -674,6 +741,130 @@ export default function Home() {
                 placeholder={"Paste English slang or corporate expressions...\n\nFor example:\nLet's circle back on this\nWe need to leverage our synergies\nTake this offline"}
                 tabLabel="常见表达"
               />
+            </TabsContent>
+
+            <TabsContent value="yue" className="mt-0">
+              <div className="space-y-6">
+                <Card className="border-2 border-[#0078D4]/20 shadow-xl shadow-blue-100/50">
+                  <CardContent className="p-8">
+                    <Textarea
+                      value={inputYue}
+                      onChange={(e) => setInputYue(e.target.value)}
+                      placeholder={"输入普通话或书面语，我会帮你转换成地道的粤语表达...\n\n例如：\n今天天气真好，我们去逛街吧\n我今天很忙，晚上才能吃饭"}
+                      className="min-h-[120px] text-base border-0 resize-none focus-visible:ring-0 p-0 bg-transparent text-gray-800 placeholder:text-gray-400"
+                      disabled={isLoadingYue}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                          handleYueSubmit();
+                        }
+                      }}
+                    />
+                    <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
+                      <p className="text-sm text-gray-500">
+                        按 <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono text-gray-600">Ctrl + Enter</kbd> 快速提交
+                      </p>
+                      <Button
+                        onClick={handleYueSubmit}
+                        disabled={!inputYue.trim() || isLoadingYue}
+                        className="bg-[#0078D4] hover:bg-[#106EBE] text-white px-6"
+                      >
+                        {isLoadingYue ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            转换中...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4 mr-2" />
+                            开始转换
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {showExamplesYue && (
+                  <div>
+                    <p className="text-sm text-gray-500 mb-3 text-center">试试这些常用语：</p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {EXAMPLE_PHRASES_YUE.map((phrase, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            setInputYue(phrase);
+                            setShowExamplesYue(false);
+                          }}
+                          className="px-3 py-2 bg-white border border-gray-200 rounded-full text-sm text-gray-600 hover:border-[#0078D4] hover:text-[#0078D4] transition-colors shadow-sm"
+                        >
+                          {phrase.length > 25 ? phrase.slice(0, 25) + "..." : phrase}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {isLoadingYue && (
+                  <div className="flex items-center justify-center gap-3 py-8">
+                    <div className="w-3 h-3 bg-[#0078D4] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <div className="w-3 h-3 bg-[#0078D4] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <div className="w-3 h-3 bg-[#0078D4] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
+                )}
+
+                {(hasResultYue || resultYue) && (
+                  <div ref={resultRefYue}>
+                    <Card className="bg-gradient-to-br from-blue-50 to-teal-50 border-2 border-blue-200">
+                      <CardContent className="p-8">
+                        <div className="flex items-start justify-between mb-4">
+                          <h2 className="text-lg font-semibold text-[#323130] flex items-center gap-3">
+                            <span className="text-2xl">🦁</span>
+                            粤语表达
+                          </h2>
+                          {resultYue && (
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(resultYue);
+                                setCopiedYue(true);
+                                setTimeout(() => setCopiedYue(false), 2000);
+                              }}
+                              className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                              title="复制结果"
+                            >
+                              {copiedYue ? (
+                                <Check className="w-4 h-4 text-green-600" />
+                              ) : (
+                                <Copy className="w-4 h-4 text-gray-400" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                        <div className="text-xl text-gray-800 leading-relaxed font-medium">
+                          {resultYue || "..."}
+                        </div>
+                        {hasResultYue && (
+                          <div className="flex justify-center pt-6">
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setInputYue("");
+                                setShowExamplesYue(true);
+                                setHasResultYue(false);
+                                setResultYue("");
+                                fullResponseYue.current = "";
+                              }}
+                              className="gap-2 border-[#0078D4] text-[#0078D4] hover:bg-[#0078D4]/10"
+                            >
+                              <RefreshCw className="w-4 h-4" />
+                              继续转换
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </div>
