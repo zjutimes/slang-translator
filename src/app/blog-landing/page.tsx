@@ -16,16 +16,21 @@ import {
   Star,
   BookOpen,
   Quote,
-  ChevronDown
+  ChevronDown,
+  Coffee
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import LoginModal from "@/components/login-modal";
+import PaymentModal from "@/components/payment-modal";
 import { useAuth } from "@/hooks/useAuth";
+import { useDonation } from "@/hooks/useDonation";
 
 export default function BlogLandingPage() {
   const { isLoggedIn } = useAuth();
+  const { donations, totalAmount, addDonation } = useDonation();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -54,6 +59,13 @@ export default function BlogLandingPage() {
             <Link href="/user-blog" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">
               浏览博客
             </Link>
+            <button 
+              onClick={() => setIsPaymentModalOpen(true)}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-500 hover:bg-red-50 rounded-full transition-colors"
+            >
+              <Heart className="w-4 h-4" />
+              支持作者
+            </button>
             {isLoggedIn ? (
               <Link href="/user-blog/write">
                 <Button className="bg-[#0078D4] hover:bg-[#106EBE] gap-2">
@@ -379,6 +391,69 @@ export default function BlogLandingPage() {
                 浏览文章
               </Button>
             </Link>
+            <Button 
+              size="lg" 
+              variant="outline"
+              onClick={() => setIsPaymentModalOpen(true)}
+              className="text-white border-white hover:bg-white/10 text-lg px-10 h-14 bg-transparent"
+            >
+              <Heart className="w-5 h-5" />
+              支持作者
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Donation Section */}
+      <section className="py-20 px-6 bg-gradient-to-b from-amber-50 to-white">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 rounded-full text-amber-700 text-sm mb-4">
+              <Coffee className="w-4 h-4" />
+              请作者喝杯咖啡
+            </div>
+            <h2 className="text-3xl font-bold text-[#323130] mb-4">用户赞助</h2>
+            <p className="text-gray-600">
+              感谢 <span className="font-bold text-2xl text-amber-600">¥{totalAmount.toFixed(2)}</span> 元支持
+            </p>
+          </div>
+          
+          {/* Top Supporters */}
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            {donations.slice(0, 3).map((donation, i) => (
+              <Card key={donation.id} className={`border-amber-200 ${
+                i === 0 ? "bg-gradient-to-br from-amber-50 to-yellow-50" : ""
+              }`}>
+                <CardContent className="p-4 text-center">
+                  <div className={`w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-3 ${
+                    i === 0 ? "bg-amber-400 text-white" : 
+                    i === 1 ? "bg-gray-300 text-white" : 
+                    i === 2 ? "bg-amber-600 text-white" : "bg-gray-100 text-gray-600"
+                  }`}>
+                    {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : ""}
+                  </div>
+                  <p className="font-bold text-[#323130]">{donation.donor}</p>
+                  <span className="text-2xl font-bold text-amber-600">
+                    ¥{donation.amount.toFixed(2)}
+                  </span>
+                  {donation.message && (
+                    <p className="text-sm text-gray-500 mt-2 italic">"{donation.message}"</p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Support Button */}
+          <div className="text-center">
+            <Button 
+              size="lg"
+              onClick={() => setIsPaymentModalOpen(true)}
+              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-lg px-12 gap-2 h-14 shadow-lg"
+            >
+              <Heart className="w-5 h-5" />
+              请作者喝咖啡 ☕
+            </Button>
           </div>
         </div>
       </section>
@@ -458,6 +533,15 @@ export default function BlogLandingPage() {
         onLoginSuccess={() => {
           setIsLoginModalOpen(false);
           window.location.href = "/user-blog/write";
+        }}
+      />
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        onSuccess={(amount, message) => {
+          addDonation(amount, message, "匿名用户");
         }}
       />
     </div>
