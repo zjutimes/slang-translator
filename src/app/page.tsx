@@ -499,6 +499,7 @@ export default function Home() {
             <a href="#features" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">功能介绍</a>
             <a href="#try" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">立即体验</a>
             <a href="/dictionary" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">江湖词典</a>
+            <a href="/blog" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">博客</a>
             <Button 
               size="sm"
               className="bg-[#0078D4] hover:bg-[#106EBE] text-white"
