@@ -9,7 +9,7 @@ import { generateCaptcha, verifyCaptcha } from "@/lib/captcha";
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLoginSuccess: (user: { nickname: string; loginTime: string }) => void;
+  onLoginSuccess: (user: { id: string; nickname: string; loginTime: string }) => void;
 }
 
 export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
@@ -91,6 +91,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
     // 简单验证通过
     const user = {
+      id: Date.now().toString(36) + Math.random().toString(36).substr(2),
       nickname: nickname.trim(),
       loginTime: new Date().toISOString(),
     };

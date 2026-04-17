@@ -506,6 +506,7 @@ export default function Home() {
             <a href="#try" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">立即体验</a>
             <a href="/dictionary" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">江湖词典</a>
             <a href="/blog" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">博客</a>
+            <a href="/user-blog" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">用户博客</a>
             {isLoggedIn ? (
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-600 flex items-center gap-1">
