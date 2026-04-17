@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import LoginModal from "@/components/login-modal";
 import PaymentModal from "@/components/payment-modal";
+import CustomerServiceWidget from "@/components/customer-service-widget";
 import { useAuth } from "@/hooks/useAuth";
 import { useDonation } from "@/hooks/useDonation";
 
@@ -544,6 +545,9 @@ export default function BlogLandingPage() {
           addDonation(amount, message, "匿名用户");
         }}
       />
+
+      {/* Customer Service Widget */}
+      <CustomerServiceWidget />
     </div>
   );
 }
