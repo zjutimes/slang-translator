@@ -44,8 +44,8 @@ export default function BlogPage() {
           <nav className="flex items-center gap-6">
             <Link href="/" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">翻译器</Link>
             <Link href="/dictionary" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">江湖词典</Link>
-            <Link href="/blog" className="text-sm text-[#0078D4] font-medium">博客</Link>
-            <Link href="/user-blog" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">用户博客</Link>
+            <Link href="/blog" className="text-sm text-gray-600 hover:text-[#0078D4] transition-colors">博客</Link>
+            <Link href="/blog-landing" className="text-sm text-[#0078D4] font-medium">用户博客</Link>
             {isLoggedIn ? (
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-600 flex items-center gap-1">
