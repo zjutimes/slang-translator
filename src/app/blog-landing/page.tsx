@@ -93,17 +93,17 @@ export default function BlogLandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link href="/user-blog/write">
-                <Button size="lg" className="bg-[#0078D4] hover:bg-[#106EBE] text-lg px-8 gap-2 h-14">
-                  <PenTool className="w-5 h-5" />
-                  开始免费创作
+                <Button size="lg" className="bg-[#0078D4] hover:bg-[#106EBE] text-lg px-10 gap-2 h-14 font-bold">
+                  <Zap className="w-5 h-5" />
+                  立即试用
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
-              <Link href="/user-blog">
-                <Button size="lg" variant="outline" className="text-lg px-8 h-14">
-                  探索文章
+              <a href="#features">
+                <Button size="lg" variant="outline" className="text-lg px-10 h-14">
+                  了解更多
                 </Button>
-              </Link>
+              </a>
             </div>
             <p className="text-sm text-gray-400 mt-4">无需注册，点击即可体验 · 完全免费</p>
           </div>
