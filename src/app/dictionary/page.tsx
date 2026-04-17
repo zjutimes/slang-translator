@@ -113,19 +113,19 @@ export default function DictionaryPage() {
       {/* Category Filter */}
       <section className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.name}
                 onClick={() => setSelectedCategory(cat.name)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                   selectedCategory === cat.name
                     ? "bg-[#0078D4] text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
                 <span>{cat.icon}</span>
-                <span>{cat.name}</span>
+                <span className="truncate">{cat.name}</span>
                 <span className="text-xs opacity-70">({categoryCounts[cat.name] || 0})</span>
               </button>
             ))}
