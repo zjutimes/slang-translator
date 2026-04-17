@@ -17,13 +17,15 @@ import {
   BookOpen,
   Quote,
   ChevronDown,
-  Coffee
+  Coffee,
+  Mail
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import LoginModal from "@/components/login-modal";
 import PaymentModal from "@/components/payment-modal";
 import CustomerServiceWidget from "@/components/customer-service-widget";
+import EmailSubscription from "@/components/email-subscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useDonation } from "@/hooks/useDonation";
 
@@ -456,6 +458,36 @@ export default function BlogLandingPage() {
               请作者喝咖啡 ☕
             </Button>
           </div>
+        </div>
+      </section>
+
+      {/* Email Subscription Section */}
+      <section className="py-20 px-6 bg-gradient-to-r from-[#0078D4] to-[#005A9E]">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 rounded-full text-white text-sm mb-4">
+              <Mail className="w-4 h-4" />
+              订阅邮件推送
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-4">
+              不想错过精彩内容？
+            </h2>
+            <p className="text-white/80 text-lg mb-8">
+              订阅我们的邮件，每周精选内容直接送到你的收件箱
+            </p>
+          </div>
+          
+          <div className="bg-white rounded-2xl p-6 max-w-xl mx-auto">
+            <EmailSubscription 
+              variant="card"
+              title="订阅邮件推送"
+              description="每周精选文章、活动信息第一时间送达"
+            />
+          </div>
+
+          <p className="text-center text-white/60 text-sm mt-6">
+            已订阅用户：1,234 人 · 我们尊重您的隐私，不会发送垃圾邮件
+          </p>
         </div>
       </section>
 
